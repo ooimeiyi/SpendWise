@@ -45,10 +45,6 @@ fun SpendWiseScreen() {
             SignUpScreen(
                 loginViewModel = viewModel,
 
-                onSignUpSuccess = {
-                    screen = "dashboard"
-                },
-
                 onBackToLogin = {
                     screen = "login"
                 }

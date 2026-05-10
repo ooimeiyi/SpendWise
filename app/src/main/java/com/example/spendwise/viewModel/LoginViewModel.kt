@@ -5,7 +5,11 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
 import androidx.lifecycle.ViewModel
 import com.google.firebase.auth.FirebaseAuth
+import com.google.firebase.auth.FirebaseAuthException
+import com.google.firebase.auth.FirebaseAuthInvalidCredentialsException
+import com.google.firebase.auth.FirebaseAuthInvalidUserException
 import com.google.firebase.firestore.FirebaseFirestore
+import com.google.firebase.firestore.FieldValue
 
 class LoginViewModel : ViewModel() {
 
@@ -37,6 +41,9 @@ class LoginViewModel : ViewModel() {
     var isPasswordVisible by mutableStateOf(false)
         private set
 
+    var isConfirmPasswordVisible by mutableStateOf(false)
+        private set
+
     var isLoggingIn by mutableStateOf(false)
         private set
 
@@ -44,6 +51,22 @@ class LoginViewModel : ViewModel() {
         private set
 
     var loginErrorMessage by mutableStateOf("")
+
+    // SIGN UP FIELD ERRORS
+    var usernameError by mutableStateOf<String?>(null)
+        private set
+
+    var phoneError by mutableStateOf<String?>(null)
+        private set
+
+    var emailError by mutableStateOf<String?>(null)
+        private set
+
+    var passwordError by mutableStateOf<String?>(null)
+        private set
+
+    var confirmPasswordError by mutableStateOf<String?>(null)
+        private set
 
     // ================= INPUT FUNCTIONS =================
 
@@ -56,6 +79,10 @@ class LoginViewModel : ViewModel() {
 
     fun togglePasswordVisibility() {
         isPasswordVisible = !isPasswordVisible
+    }
+
+    fun toggleConfirmPasswordVisibility() {
+        isConfirmPasswordVisible = !isConfirmPasswordVisible
     }
 
     // ================= LOGIN =================
@@ -80,7 +107,14 @@ class LoginViewModel : ViewModel() {
                     onResult(true)
                 } else {
                     loginError = true
-                    loginErrorMessage = task.exception?.message ?: "Login failed"
+                    val errorCode = (task.exception as? FirebaseAuthException)?.errorCode
+                    loginErrorMessage = when {
+                        errorCode == "ERROR_USER_NOT_FOUND" -> "No account found. Please sign up."
+                        errorCode == "ERROR_INVALID_EMAIL" -> "Invalid email format"
+                        task.exception is FirebaseAuthInvalidUserException -> "No account found. Please sign up."
+                        task.exception is FirebaseAuthInvalidCredentialsException -> "Incorrect email or password"
+                        else -> task.exception?.message ?: "Login failed"
+                    }
                     onResult(false)
                 }
             }
@@ -90,23 +124,7 @@ class LoginViewModel : ViewModel() {
 
     fun createAccount(onResult: (Boolean) -> Unit) {
 
-        if (
-            username.isBlank() ||
-            phoneNumber.isBlank() ||
-            inputUserId.isBlank() ||
-            inputPassword.isBlank() ||
-            confirmPassword.isBlank()
-        ) {
-            loginError = true
-            loginErrorMessage = "Please fill all fields"
-            return
-        }
-
-        if (inputPassword != confirmPassword) {
-            loginError = true
-            loginErrorMessage = "Password does not match"
-            return
-        }
+        if (!validateSignUpFields()) return
 
         isLoggingIn = true
 
@@ -116,22 +134,34 @@ class LoginViewModel : ViewModel() {
                 if (task.isSuccessful) {
 
                     val uid = auth.currentUser!!.uid
+                    val usernameKey = username.trim()
 
-                    val userMap = hashMapOf(
-                        "username" to username,
-                        "phone" to phoneNumber,
-                        "email" to inputUserId
+                    val userDoc = firestore.collection("users").document(uid)
+                    val profileDoc = userDoc.collection(usernameKey).document("profile")
+
+                    val userRootMap = hashMapOf(
+                        "createdAt" to FieldValue.serverTimestamp()
                     )
 
-                    firestore.collection("users")
-                        .document(uid)
-                        .set(userMap)
+                    val profileMap = hashMapOf(
+                        "username" to usernameKey,
+                        "phone" to phoneNumber,
+                        "email" to inputUserId,
+                        "updatedAt" to FieldValue.serverTimestamp()
+                    )
+
+                    firestore.batch()
+                        .apply {
+                            set(userDoc, userRootMap)
+                            set(profileDoc, profileMap)
+                        }
+                        .commit()
                         .addOnSuccessListener {
 
                             isLoggingIn = false
                             loginError = false
 
-                            clearFields()
+                            clearSignUpForm(clearAuthInputs = true)
                             onResult(true)
                         }
                         .addOnFailureListener {
@@ -152,12 +182,83 @@ class LoginViewModel : ViewModel() {
             }
     }
 
-    private fun clearFields() {
+    fun clearSignUpForm(clearAuthInputs: Boolean = false) {
         username = ""
         phoneNumber = ""
+        confirmPassword = ""
+        clearSignUpErrors()
+
+        if (clearAuthInputs) {
+            inputUserId = ""
+            inputPassword = ""
+        }
+    }
+
+    fun clearLoginInputs() {
         inputUserId = ""
         inputPassword = ""
-        confirmPassword = ""
+    }
+
+    private fun clearSignUpErrors() {
+        usernameError = null
+        phoneError = null
+        emailError = null
+        passwordError = null
+        confirmPasswordError = null
+    }
+
+    private fun validateSignUpFields(): Boolean {
+        clearSignUpErrors()
+
+        var isValid = true
+
+        val trimmedUsername = username.trim()
+        if (trimmedUsername.isBlank()) {
+            usernameError = "Username is required"
+            isValid = false
+        } else if (trimmedUsername.contains("/")) {
+            usernameError = "Username cannot contain '/'"
+            isValid = false
+        }
+
+        val phoneRegex = Regex("^[0-9]{10,15}$")
+        if (phoneNumber.isBlank()) {
+            phoneError = "Phone number is required"
+            isValid = false
+        } else if (!phoneRegex.matches(phoneNumber)) {
+            phoneError = "Phone number must be 10-15 digits"
+            isValid = false
+        }
+
+        val emailRegex = Regex("^[A-Za-z0-9+_.-]+@[A-Za-z0-9.-]+$")
+        if (inputUserId.isBlank()) {
+            emailError = "Email is required"
+            isValid = false
+        } else if (!emailRegex.matches(inputUserId)) {
+            emailError = "Invalid email format"
+            isValid = false
+        }
+
+        val passwordRegex = Regex("^(?=.*[a-z])(?=.*[A-Z])(?=.*\\d)(?=.*[@$!%*?&#^()_+\\-={}\\[\\]:;\"'<>,./]).{8,}$")
+        if (inputPassword.isBlank()) {
+            passwordError = "Password is required"
+            isValid = false
+        } else if (!passwordRegex.matches(inputPassword)) {
+            passwordError = "Use 8+ chars with upper, lower, number, and symbol"
+            isValid = false
+        }
+
+        if (confirmPassword.isBlank()) {
+            confirmPasswordError = "Confirm password is required"
+            isValid = false
+        } else if (inputPassword != confirmPassword) {
+            confirmPasswordError = "Password does not match"
+            isValid = false
+        }
+
+        loginError = !isValid
+        loginErrorMessage = if (isValid) "" else "Please fix highlighted fields"
+        return isValid
     }
 
     // ================= RESET PASSWORD =================

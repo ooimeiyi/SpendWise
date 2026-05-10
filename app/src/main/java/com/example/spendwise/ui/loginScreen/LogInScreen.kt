@@ -49,6 +49,7 @@ import androidx.compose.ui.text.input.VisualTransformation
 import androidx.compose.material.icons.filled.Visibility
 import androidx.compose.material.icons.filled.VisibilityOff
 import androidx.compose.material.icons.filled.Login
+import androidx.compose.ui.graphics.Color.Companion.Red
 import androidx.compose.ui.text.SpanStyle
 import androidx.compose.ui.text.buildAnnotatedString
 import androidx.compose.ui.text.style.TextDecoration
@@ -68,7 +69,14 @@ fun LogInScreen(
     val textFieldColors = OutlinedTextFieldDefaults.colors(
         focusedTextColor = Color.Black,
         unfocusedTextColor = Color.Black,
-        cursorColor = Color.Black
+        errorTextColor = Color.Black,
+        cursorColor = Color.Black,
+        focusedBorderColor = SpendWisePrimary,
+        unfocusedBorderColor = Color(0xFFCED4DA),
+        focusedLeadingIconColor = Color.LightGray,
+        unfocusedLeadingIconColor = Color.LightGray,
+        focusedTrailingIconColor = Color.LightGray,
+        unfocusedTrailingIconColor = Color.LightGray,
     )
 
     val context = LocalContext.current

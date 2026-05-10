@@ -3,6 +3,8 @@ package com.example.spendwise.ui.loginScreen
 import android.widget.Toast
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.KeyboardOptions
@@ -18,6 +20,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.shadow
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.Color.Companion.Red
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.SpanStyle
 import androidx.compose.ui.text.buildAnnotatedString
@@ -35,7 +38,6 @@ import com.example.spendwise.viewModel.LoginViewModel
 @Composable
 fun SignUpScreen(
     loginViewModel: LoginViewModel,
-    onSignUpSuccess: () -> Unit,
     onBackToLogin: () -> Unit
 ) {
     val context = LocalContext.current
@@ -43,7 +45,18 @@ fun SignUpScreen(
     val textFieldColors = OutlinedTextFieldDefaults.colors(
         focusedTextColor = Color.Black,
         unfocusedTextColor = Color.Black,
-        cursorColor = Color.Black
+        errorTextColor = Color.Black,
+        cursorColor = Color.Black,
+        focusedBorderColor = SpendWisePrimary,
+        unfocusedBorderColor = Color(0xFFCED4DA),
+        focusedLeadingIconColor = Color.LightGray,
+        unfocusedLeadingIconColor = Color.LightGray,
+        focusedTrailingIconColor = Color.LightGray,
+        unfocusedTrailingIconColor = Color.LightGray,
+        errorBorderColor = Red,
+        errorCursorColor = Red,
+        errorLeadingIconColor = Red,
+        errorTrailingIconColor = Red
     )
 
     Box(
@@ -55,10 +68,13 @@ fun SignUpScreen(
         Column(
             modifier = Modifier
                 .fillMaxSize()
-                .padding(horizontal = 24.dp),
+                .verticalScroll(rememberScrollState())
+                .padding(horizontal = 24.dp, vertical = 24.dp),
             verticalArrangement = Arrangement.Center,
             horizontalAlignment = Alignment.CenterHorizontally
         ) {
+
+            Spacer(modifier = Modifier.height(20.dp))
 
             Text(
                 text = "Create your new Spend Wise account",
@@ -96,8 +112,12 @@ fun SignUpScreen(
                         modifier = Modifier.fillMaxWidth(),
                         shape = RoundedCornerShape(12.dp),
                         colors = textFieldColors,
+                        isError = loginViewModel.usernameError != null,
                         singleLine = true
                     )
+                    loginViewModel.usernameError?.let {
+                        Text(text = it, color = Red, fontSize = 12.sp)
+                    }
 
                     Spacer(modifier = Modifier.height(10.dp))
 
@@ -117,8 +137,12 @@ fun SignUpScreen(
                         keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Phone),
                         shape = RoundedCornerShape(12.dp),
                         colors = textFieldColors,
+                        isError = loginViewModel.phoneError != null,
                         singleLine = true
                     )
+                    loginViewModel.phoneError?.let {
+                        Text(text = it, color = Red, fontSize = 12.sp)
+                    }
 
                     Spacer(modifier = Modifier.height(10.dp))
 
@@ -137,8 +161,13 @@ fun SignUpScreen(
                         modifier = Modifier.fillMaxWidth(),
                         shape = RoundedCornerShape(12.dp),
                         colors = textFieldColors,
+                        keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Email),
+                        isError = loginViewModel.emailError != null,
                         singleLine = true
                     )
+                    loginViewModel.emailError?.let {
+                        Text(text = it, color = Red, fontSize = 12.sp)
+                    }
 
                     Spacer(modifier = Modifier.height(10.dp))
 
@@ -161,8 +190,7 @@ fun SignUpScreen(
                         leadingIcon = {
                             Icon(
                                 Icons.Default.Lock,
-                                null,
-                                tint = Color.LightGray
+                                null
                             )
                         },
                         trailingIcon = {
@@ -177,8 +205,7 @@ fun SignUpScreen(
                                             Icons.Default.Visibility
                                         else
                                             Icons.Default.VisibilityOff,
-                                    contentDescription = null,
-                                    tint = Color.LightGray
+                                    contentDescription = null
                                 )
                             }
                         },
@@ -193,9 +220,12 @@ fun SignUpScreen(
                         modifier = Modifier.fillMaxWidth(),
                         shape = RoundedCornerShape(12.dp),
                         colors = textFieldColors,
+                        isError = loginViewModel.passwordError != null,
                         singleLine = true
                     )
-
+                    loginViewModel.passwordError?.let {
+                        Text(text = it, color = Red, fontSize = 12.sp)
+                    }
 
                     Spacer(modifier = Modifier.height(10.dp))
 
@@ -220,29 +250,27 @@ fun SignUpScreen(
                         leadingIcon = {
                             Icon(
                                 Icons.Default.Lock,
-                                null,
-                                tint = Color.LightGray
+                                null
                             )
                         },
                         trailingIcon = {
                             IconButton(
                                 onClick = {
-                                    loginViewModel.togglePasswordVisibility()
+                                    loginViewModel.toggleConfirmPasswordVisibility()
                                 }
                             ) {
                                 Icon(
                                     imageVector =
-                                        if (loginViewModel.isPasswordVisible)
+                                        if (loginViewModel.isConfirmPasswordVisible)
                                             Icons.Default.Visibility
                                         else
                                             Icons.Default.VisibilityOff,
-                                    contentDescription = null,
-                                    tint = Color.LightGray
+                                    contentDescription = null
                                 )
                             }
                         },
                         visualTransformation =
-                            if (loginViewModel.isPasswordVisible)
+                            if (loginViewModel.isConfirmPasswordVisible)
                                 VisualTransformation.None
                             else
                                 PasswordVisualTransformation(),
@@ -252,8 +280,12 @@ fun SignUpScreen(
                         modifier = Modifier.fillMaxWidth(),
                         shape = RoundedCornerShape(12.dp),
                         colors = textFieldColors,
+                        isError = loginViewModel.confirmPasswordError != null,
                         singleLine = true
                     )
+                    loginViewModel.confirmPasswordError?.let {
+                        Text(text = it, color = Red, fontSize = 12.sp)
+                    }
 
                     Spacer(modifier = Modifier.height(20.dp))
 
@@ -269,7 +301,8 @@ fun SignUpScreen(
                                         Toast.LENGTH_SHORT
                                     ).show()
 
-                                    onSignUpSuccess()
+                                    loginViewModel.clearLoginInputs()
+                                    onBackToLogin()
 
                                 } else {
 
@@ -281,19 +314,31 @@ fun SignUpScreen(
                                 }
                             }
                         },
+                        enabled = !loginViewModel.isLoggingIn,
                         modifier = Modifier
                             .fillMaxWidth()
                             .height(56.dp),
                         shape = RoundedCornerShape(12.dp),
                         colors = ButtonDefaults.buttonColors(
-                            containerColor = SpendWisePrimary
+                            containerColor = SpendWisePrimary,
+                            contentColor = Color.White,
+                            disabledContainerColor = SpendWisePrimary,
+                            disabledContentColor = Color.White
                         )
                     ) {
-                        Text(
-                            text = "Sign Up",
-                            color = Color.White,
-                            fontWeight = FontWeight.Bold
-                        )
+                        if (loginViewModel.isLoggingIn) {
+                            CircularProgressIndicator(
+                                modifier = Modifier.size(18.dp),
+                                color = Color.White,
+                                strokeWidth = 2.dp
+                            )
+                        } else {
+                            Text(
+                                text = "Sign Up",
+                                color = Color.White,
+                                fontWeight = FontWeight.Bold
+                            )
+                        }
                     }
                 }
             }
@@ -315,6 +360,7 @@ fun SignUpScreen(
                     }
                 },
                 modifier = Modifier.clickable {
+                    loginViewModel.clearSignUpForm(clearAuthInputs = true)
                     onBackToLogin()
                 },
                 color = SpendWisePrimary
