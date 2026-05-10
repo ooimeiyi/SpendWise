@@ -7,6 +7,7 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.example.spendwise.ui.dashboard.DashboardScreen
+import com.example.spendwise.ui.loginScreen.ForgotPasswordScreen
 import com.example.spendwise.ui.loginScreen.LogInScreen
 import com.example.spendwise.ui.loginScreen.SignUpScreen
 import com.example.spendwise.viewModel.LoginViewModel
@@ -21,23 +22,44 @@ fun SpendWiseScreen() {
     when (screen) {
 
         "login" -> {
+
             LogInScreen(
                 loginViewModel = viewModel,
+
                 onLoginSuccess = {
                     screen = "dashboard"
                 },
+
                 onGoToSignUp = {
                     screen = "signup"
+                },
+
+                onForgotPassword = {
+                    screen = "forgotPassword"
                 }
             )
         }
 
         "signup" -> {
+
             SignUpScreen(
                 loginViewModel = viewModel,
+
                 onSignUpSuccess = {
                     screen = "dashboard"
                 },
+
+                onBackToLogin = {
+                    screen = "login"
+                }
+            )
+        }
+
+        "forgotPassword" -> {
+
+            ForgotPasswordScreen(
+                loginViewModel = viewModel,
+
                 onBackToLogin = {
                     screen = "login"
                 }
@@ -45,10 +67,13 @@ fun SpendWiseScreen() {
         }
 
         "dashboard" -> {
+
             DashboardScreen(
                 onLogout = {
+
                     viewModel.onUserIdChange("")
                     viewModel.onPasswordChange("")
+
                     screen = "login"
                 }
             )

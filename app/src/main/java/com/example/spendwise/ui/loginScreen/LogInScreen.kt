@@ -49,6 +49,10 @@ import androidx.compose.ui.text.input.VisualTransformation
 import androidx.compose.material.icons.filled.Visibility
 import androidx.compose.material.icons.filled.VisibilityOff
 import androidx.compose.material.icons.filled.Login
+import androidx.compose.ui.text.SpanStyle
+import androidx.compose.ui.text.buildAnnotatedString
+import androidx.compose.ui.text.style.TextDecoration
+import androidx.compose.ui.text.withStyle
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.example.spendwise.ui.theme.SpendWisePrimary
@@ -58,7 +62,8 @@ import com.example.spendwise.viewModel.LoginViewModel
 fun LogInScreen(
     loginViewModel: LoginViewModel,
     onLoginSuccess: () -> Unit,
-    onGoToSignUp: () -> Unit
+    onGoToSignUp: () -> Unit,
+    onForgotPassword: () -> Unit
 ) {
     val textFieldColors = OutlinedTextFieldDefaults.colors(
         focusedTextColor = Color.Black,
@@ -88,6 +93,12 @@ fun LogInScreen(
             horizontalAlignment = Alignment.CenterHorizontally,
             verticalArrangement = Arrangement.Center
         ) {
+
+            Image(
+                painter = painterResource(id = R.drawable.spend_wise_logo),
+                contentDescription = "Logo",
+                modifier = Modifier.size(120.dp)
+            )
 
             Spacer(modifier = Modifier.height(8.dp))
 
@@ -174,6 +185,17 @@ fun LogInScreen(
                         }
                     }
 
+                    Text(
+                        text = "Forgot Password?",
+                        color = SpendWisePrimary,
+                        fontWeight = FontWeight.Bold,
+                        modifier = Modifier
+                            .align(Alignment.End)
+                            .clickable {
+                                onForgotPassword()
+                            }
+                    )
+
                     Spacer(modifier = Modifier.height(10.dp))
 
                     Button(
@@ -209,19 +231,30 @@ fun LogInScreen(
                             }
                         }
                     }
-
-                    Spacer(modifier = Modifier.height(12.dp))
-
-                    Text(
-                        text = "Don't have an account? Sign Up",
-                        color = SpendWisePrimary,
-                        fontWeight = FontWeight.Bold,
-                        modifier = Modifier.clickable {
-                            onGoToSignUp()
-                        }
-                    )
                 }
             }
+
+            Spacer(modifier = Modifier.height(12.dp))
+
+            Text(
+                text = buildAnnotatedString {
+                    append("Don't have an account? ")
+
+                    withStyle(
+                        style = SpanStyle(
+                            color = SpendWisePrimary,
+                            fontWeight = FontWeight.Bold,
+                            textDecoration = TextDecoration.Underline
+                        )
+                    ) {
+                        append("Sign Up")
+                    }
+                },
+                modifier = Modifier.clickable {
+                    onGoToSignUp()
+                },
+                color = SpendWisePrimary
+            )
         }
     }
 }
