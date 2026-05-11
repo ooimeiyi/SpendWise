@@ -84,6 +84,12 @@ fun BudgetScreen(
         vm.loadCurrentMonth()
     }
 
+    LaunchedEffect(state.message) {
+        state.message?.let { message ->
+            Toast.makeText(context, message, Toast.LENGTH_SHORT).show()
+        }
+    }
+
     if (state.showAddCategoryDialog) {
         AlertDialog(
             onDismissRequest = { vm.closeAddCategoryDialog() },
@@ -176,14 +182,6 @@ fun BudgetScreen(
             )
         }
 
-        if (state.message != null) {
-            Text(
-                text = state.message,
-                style = MaterialTheme.typography.bodyMedium,
-                color = MaterialTheme.colorScheme.error,
-            )
-        }
-
         ManagementCard(
             title = "Overall Monthly Budget",
             icon = Icons.Filled.Payments,
@@ -273,6 +271,17 @@ fun BudgetScreen(
                 color = if (remainingBudget >= 0) Color.Black else MaterialTheme.colorScheme.error,
             )
         }
+
+        state.message
+            ?.takeUnless { it == "Monthly budget set." }
+            ?.let { message ->
+                val isSuccessMessage = message == "Budget saved."
+                Text(
+                    text = message,
+                    style = MaterialTheme.typography.bodyMedium,
+                    color = if (isSuccessMessage) Color(0xFF0B3D91) else MaterialTheme.colorScheme.error,
+                )
+            }
 
         Button(
             onClick = {
