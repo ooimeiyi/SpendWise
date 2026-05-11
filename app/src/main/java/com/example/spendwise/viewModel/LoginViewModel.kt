@@ -137,7 +137,7 @@ class LoginViewModel : ViewModel() {
                     val usernameKey = username.trim()
 
                     val userDoc = firestore.collection("users").document(uid)
-                    val profileDoc = userDoc.collection(usernameKey).document("profile")
+                    val profileDoc = userDoc.collection("profile").document(usernameKey)
 
                     val userRootMap = hashMapOf(
                         "createdAt" to FieldValue.serverTimestamp()
