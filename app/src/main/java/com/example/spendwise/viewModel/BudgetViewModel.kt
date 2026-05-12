@@ -24,6 +24,7 @@ data class BudgetUiState(
     val showAddCategoryDialog: Boolean = false,
     val newCategoryName: String = "",
     val showOtherConfirmDialog: Boolean = false,
+    val isEditCategoriesMode: Boolean = false,
 )
 
 class BudgetViewModel : ViewModel() {
@@ -54,11 +55,26 @@ class BudgetViewModel : ViewModel() {
     val isOverBudget: Boolean
         get() = remainingBudget < 0
 
+    private fun currentMonthKey(): String =
+        LocalDate.now().format(DateTimeFormatter.ofPattern("yyyy-MM"))
+
+    private fun currentMonthTitle(): String =
+        LocalDate.now().format(DateTimeFormatter.ofPattern("MMMM yyyy"))
+
+    private fun refreshMonthContext() {
+        val newKey = currentMonthKey()
+        val newTitle = currentMonthTitle()
+        if (uiState.monthKey != newKey || uiState.monthTitle != newTitle) {
+            uiState = uiState.copy(monthKey = newKey, monthTitle = newTitle)
+        }
+    }
+
     fun refreshUid() {
         uiState = uiState.copy(uid = auth.currentUser?.uid)
     }
 
     fun loadCurrentMonth() {
+        refreshMonthContext()
         val uid = auth.currentUser?.uid
         if (uid == null) {
             uiState = uiState.copy(uid = null, message = "Please login to manage budgets.")
@@ -74,9 +90,9 @@ class BudgetViewModel : ViewModel() {
             .document(uiState.monthKey)
             .get()
             .addOnSuccessListener { doc ->
-                var nextMonthlyInput = uiState.monthlyBudgetInput
-                var nextMonthlyValue = uiState.monthlyBudgetValue
-                var nextCategories = uiState.categories.toMutableMap()
+                var nextMonthlyInput = ""
+                var nextMonthlyValue: Long? = null
+                val nextCategories = defaultCategories.associateWith { "" }.toMutableMap()
 
                 if (doc.exists()) {
                     val loadedMonthly = doc.getLong("monthlyBudget")
@@ -123,6 +139,27 @@ class BudgetViewModel : ViewModel() {
     fun setCategoryAmount(name: String, value: String) {
         val cleaned = value.filter { it.isDigit() }
         uiState = uiState.copy(categories = uiState.categories.toMutableMap().apply { put(name, cleaned) })
+    }
+    fun toggleEditCategoriesMode() {
+        uiState = uiState.copy(isEditCategoriesMode = !uiState.isEditCategoriesMode)
+    }
+
+    fun removeCategory(name: String) {
+        val current = uiState.categories
+        if (current.size <= 1) {
+            uiState = uiState.copy(message = "At least one category is required.")
+            return
+        }
+
+        val nextCategories = current.toMutableMap().apply { remove(name) }
+        uiState = uiState.copy(
+            categories = nextCategories,
+            message = null,
+        )
+
+        if (uiState.uid != null) {
+            saveToFirebase(nextCategories)
+        }
     }
 
     fun openAddCategoryDialog() {
@@ -173,7 +210,7 @@ class BudgetViewModel : ViewModel() {
         uiState = uiState.copy(
             monthlyBudgetValue = monthly,
             categories = nextCategories,
-            message = "Monthly budget set.",
+            message = null,
         )
     }
 
@@ -208,6 +245,7 @@ class BudgetViewModel : ViewModel() {
     }
 
     private fun saveToFirebase(currentCategories: Map<String, String>) {
+        refreshMonthContext()
         val uid = uiState.uid ?: return
 
         val monthly = uiState.monthlyBudgetValue ?: (uiState.monthlyBudgetInput.toLongOrNull() ?: 0L)
@@ -226,7 +264,7 @@ class BudgetViewModel : ViewModel() {
             .document(uid)
             .collection("budget")
             .document(uiState.monthKey)
-            .set(data, SetOptions.merge())
+            .set(data)
             .addOnSuccessListener {
                 uiState = uiState.copy(isSaving = false, message = "Budget saved.")
             }

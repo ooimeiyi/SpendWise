@@ -108,10 +108,10 @@ fun DashboardScreen(
                     .background(Color.White),
             ) {
                 when (selectedTab) {
-                    MainTab.Home -> HomeScreen(onLogout = onLogout)
+                    MainTab.Home -> HomeScreen()
                     MainTab.Transaction -> TransactionScreen()
                     MainTab.Budget -> BudgetScreen()
-                    MainTab.Profile -> ProfileScreen()
+                    MainTab.Profile -> ProfileScreen(onLogout = onLogout)
                 }
             }
         }

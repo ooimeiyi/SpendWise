@@ -21,7 +21,6 @@ import androidx.compose.ui.unit.sp
 
 @Composable
 fun HomeScreen(
-    onLogout: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
     Column(
@@ -39,11 +38,6 @@ fun HomeScreen(
             textAlign = TextAlign.Center,
         )
 
-        Spacer(modifier = Modifier.height(30.dp))
-
-        Button(onClick = onLogout) {
-            Text("Logout")
-        }
     }
 }
 

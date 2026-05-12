@@ -46,6 +46,10 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.compose.foundation.shape.RoundedCornerShape
 import android.widget.Toast
+import androidx.compose.material.icons.filled.Delete
+import androidx.compose.material.icons.filled.Edit
+import androidx.compose.material3.ButtonDefaults
+import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.OutlinedTextFieldDefaults
 import com.example.spendwise.ui.theme.SpendWisePrimary
 import androidx.lifecycle.viewmodel.compose.viewModel
@@ -180,7 +184,10 @@ fun BudgetScreen(
             Text(
                 text = state.message,
                 style = MaterialTheme.typography.bodyMedium,
-                color = MaterialTheme.colorScheme.error,
+                color = if (state.message == "Budget saved.")
+                    Color(0xFF2E7D32) // green success
+                else
+                    Color.Red // red error
             )
         }
 
@@ -205,17 +212,48 @@ fun BudgetScreen(
             Button(
                 onClick = {
                     vm.saveMonthlyBudgetAndDistributeDefault()
+                    Toast
+                        .makeText(
+                            context,
+                            "Monthly budget set.",
+                            Toast.LENGTH_SHORT,
+                        )
+                        .show()
                 },
                 enabled = state.uid != null && !state.isSaving,
                 modifier = Modifier.fillMaxWidth(),
+                colors = ButtonDefaults.buttonColors(
+                    containerColor = SpendWisePrimary,
+                    contentColor = Color.White,
+                    disabledContainerColor = SpendWisePrimary,
+                ),
             ) {
-                Text("Save Monthly Budget")
+                if (state.isSaving) {
+                    CircularProgressIndicator(
+                        modifier = Modifier.size(20.dp),
+                        color = Color.White,
+                        strokeWidth = 2.dp,
+                    )
+                } else {
+                    Text("Save Budget")
+                }
             }
         }
 
         ManagementCard(
-            title = "Category Budget (Breakdown)",
+            title = "Category Budget",
             icon = Icons.Filled.Category,
+            headerAction = {
+                TextButton(onClick = { vm.toggleEditCategoriesMode() }) {
+                    Icon(
+                        imageVector = Icons.Filled.Edit,
+                        contentDescription = "Edit categories",
+                        tint = SpendWisePrimary,
+                    )
+                    Spacer(modifier = Modifier.width(6.dp))
+                    Text(if (state.isEditCategoriesMode) "Done" else "Edit")
+                }
+            },
         ) {
             state.categories.forEach { (name, amountText) ->
                 Row(
@@ -240,6 +278,15 @@ fun BudgetScreen(
                         modifier = Modifier.width(140.dp),
                         colors = textFieldColors
                     )
+                    if (state.isEditCategoriesMode) {
+                        IconButton(onClick = { vm.removeCategory(name) }) {
+                            Icon(
+                                imageVector = Icons.Filled.Delete,
+                                contentDescription = "Remove category $name",
+                                tint = MaterialTheme.colorScheme.error,
+                            )
+                        }
+                    }
                 }
                 Spacer(modifier = Modifier.height(10.dp))
             }
@@ -291,8 +338,21 @@ fun BudgetScreen(
             },
             enabled = state.uid != null && !state.isSaving,
             modifier = Modifier.fillMaxWidth(),
+            colors = ButtonDefaults.buttonColors(
+                containerColor = SpendWisePrimary,
+                contentColor = Color.White,
+                disabledContainerColor = SpendWisePrimary,
+            ),
         ) {
-            Text(if (state.isSaving) "Saving..." else "Save Budget")
+            if (state.isSaving) {
+                CircularProgressIndicator(
+                    modifier = Modifier.size(20.dp),
+                    color = Color.White,
+                    strokeWidth = 2.dp,
+                )
+            } else {
+                Text("Save Budget")
+            }
         }
 
         Spacer(modifier = Modifier.height(8.dp))
@@ -303,6 +363,7 @@ fun BudgetScreen(
 private fun ManagementCard(
     title: String,
     icon: ImageVector,
+    headerAction: @Composable (() -> Unit)? = null,
     content: @Composable ColumnScope.() -> Unit,
 ) {
     Card(
@@ -312,7 +373,10 @@ private fun ManagementCard(
         shape = RoundedCornerShape(16.dp),
     ) {
         Column(modifier = Modifier.padding(16.dp)) {
-            Row(verticalAlignment = Alignment.CenterVertically) {
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                verticalAlignment = Alignment.CenterVertically,
+            ) {
                 Icon(
                     icon,
                     contentDescription = null,
@@ -325,7 +389,9 @@ private fun ManagementCard(
                     fontSize = 16.sp,
                     fontWeight = FontWeight.SemiBold,
                     color = Color.Black,
+                    modifier = Modifier.weight(1f),
                 )
+                headerAction?.invoke()
             }
             HorizontalDivider(
                 modifier = Modifier.padding(vertical = 12.dp),

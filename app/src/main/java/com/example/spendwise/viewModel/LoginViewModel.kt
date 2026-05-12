@@ -120,6 +120,15 @@ class LoginViewModel : ViewModel() {
             }
     }
 
+    fun isUserLoggedIn(): Boolean {
+        return auth.currentUser != null
+    }
+
+    fun logout() {
+        auth.signOut()
+        clearLoginInputs()
+    }
+
     // ================= SIGN UP =================
 
     fun createAccount(onResult: (Boolean) -> Unit) {

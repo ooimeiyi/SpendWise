@@ -17,7 +17,11 @@ fun SpendWiseScreen() {
 
     val viewModel: LoginViewModel = viewModel()
 
-    var screen by remember { mutableStateOf("login") }
+    var screen by remember {
+        mutableStateOf(
+            if (viewModel.isUserLoggedIn()) "dashboard" else "login"
+        )
+    }
 
     when (screen) {
 
@@ -67,8 +71,7 @@ fun SpendWiseScreen() {
             DashboardScreen(
                 onLogout = {
 
-                    viewModel.onUserIdChange("")
-                    viewModel.onPasswordChange("")
+                    viewModel.logout()
 
                     screen = "login"
                 }
