@@ -92,7 +92,7 @@ class BudgetViewModel : ViewModel() {
             .addOnSuccessListener { doc ->
                 var nextMonthlyInput = ""
                 var nextMonthlyValue: Long? = null
-                val nextCategories = defaultCategories.associateWith { "" }.toMutableMap()
+                val nextCategories = mutableMapOf<String, String>()
 
                 if (doc.exists()) {
                     val loadedMonthly = doc.getLong("monthlyBudget")
@@ -114,8 +114,9 @@ class BudgetViewModel : ViewModel() {
                     }
                 }
 
-                // ensure defaults exist
-                defaultCategories.forEach { c -> nextCategories.putIfAbsent(c, "") }
+                if (nextCategories.isEmpty()) {
+                    nextCategories.putAll(defaultCategories.associateWith { "" })
+                }
 
                 uiState = uiState.copy(
                     isLoading = false,
@@ -266,7 +267,7 @@ class BudgetViewModel : ViewModel() {
             .document(uiState.monthKey)
             .set(data)
             .addOnSuccessListener {
-                uiState = uiState.copy(isSaving = false, message = "Budget saved.")
+                uiState = uiState.copy(isSaving = false, message = "Budget saved.",)
             }
             .addOnFailureListener { e ->
                 uiState = uiState.copy(isSaving = false, message = e.message ?: "Failed to save budget")

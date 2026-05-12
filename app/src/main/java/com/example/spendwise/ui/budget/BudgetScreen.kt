@@ -251,7 +251,7 @@ fun BudgetScreen(
                         tint = SpendWisePrimary,
                     )
                     Spacer(modifier = Modifier.width(6.dp))
-                    Text(if (state.isEditCategoriesMode) "Done" else "Edit")
+                    Text(if (state.isEditCategoriesMode) "Done" else "Edit",color = SpendWisePrimary)
                 }
             },
         ) {
@@ -283,7 +283,7 @@ fun BudgetScreen(
                             Icon(
                                 imageVector = Icons.Filled.Delete,
                                 contentDescription = "Remove category $name",
-                                tint = MaterialTheme.colorScheme.error,
+                                tint = Color.Red,
                             )
                         }
                     }
